@@ -12,32 +12,24 @@ import (
 	"github.com/MartSurv/secrun/internal/config"
 	"github.com/MartSurv/secrun/internal/daemon"
 	secexec "github.com/MartSurv/secrun/internal/exec"
-	"github.com/MartSurv/secrun/internal/resolve"
 	"github.com/spf13/cobra"
 )
 
-func NewRunCmd(flagProject *string, flagStore *string, flagTTL *string, flagNoCache *bool) *cobra.Command {
+func NewRunCmd(flagProject *string, flagTTL *string, flagNoCache *bool) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run [project] -- <command>",
 		Short: "Run a command with secrets injected as env vars",
-		// Cobra strips "--" and passes everything after it via cmd.ArgsLenAtDash().
-		// With TraverseChildren on the root, args before "--" are in args,
-		// and args after "--" are also in args but ArgsLenAtDash() tells us where.
-		Args: cobra.ArbitraryArgs,
+		Args:  cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var projectArg string
 			var cmdArgs []string
 
 			dashAt := cmd.ArgsLenAtDash()
 			if dashAt == -1 {
-				// No "--" found — treat all args as the command
-				// (user ran: secrun run yarn dev)
 				cmdArgs = args
 			} else if dashAt == 0 {
-				// secrun run -- yarn dev
 				cmdArgs = args
 			} else {
-				// secrun run project -- yarn dev
 				projectArg = args[0]
 				cmdArgs = args[dashAt:]
 			}
@@ -46,17 +38,14 @@ func NewRunCmd(flagProject *string, flagStore *string, flagTTL *string, flagNoCa
 				return fmt.Errorf("usage: secrun run [project] -- <command>")
 			}
 
-			dir, _ := os.Getwd()
-			cfg, _ := config.Load(config.ConfigPath())
-			project, err := resolve.ProjectName(coalesce(*flagProject, projectArg), dir)
+			project, err := resolveProjectName(flagProject, projectArg)
 			if err != nil {
 				return err
 			}
-			store := cfg.StoreForProject(project, *flagStore)
-			ttlStr := cfg.TTLForProject(project, *flagTTL)
-			ttl, err := time.ParseDuration(ttlStr)
+
+			ttl, err := time.ParseDuration(*flagTTL)
 			if err != nil {
-				return fmt.Errorf("invalid TTL '%s': %w", ttlStr, err)
+				return fmt.Errorf("invalid TTL '%s': %w", *flagTTL, err)
 			}
 
 			var secrets map[string]string
@@ -74,7 +63,7 @@ func NewRunCmd(flagProject *string, flagStore *string, flagTTL *string, flagNoCa
 				}
 			}
 
-			backend := getBackend(store)
+			backend := fileBackendForProject(project)
 			secrets, err = backend.GetAll(project)
 			if err != nil {
 				return err

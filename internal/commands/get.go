@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewGetCmd(flagProject *string, flagStore *string) *cobra.Command {
+func NewGetCmd(flagProject *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "get [project] <KEY>",
 		Short: "Print a single secret value",
@@ -23,7 +23,7 @@ func NewGetCmd(flagProject *string, flagStore *string) *cobra.Command {
 			if err := validate.KeyName(key); err != nil {
 				return err
 			}
-			project, backend, err := resolveContext(flagProject, flagStore, projectArg)
+			project, backend, err := resolveContext(flagProject, projectArg)
 			if err != nil {
 				return err
 			}

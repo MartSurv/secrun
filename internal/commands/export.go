@@ -3,11 +3,12 @@ package commands
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
-func NewExportCmd(flagProject *string, flagStore *string) *cobra.Command {
+func NewExportCmd(flagProject *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "export [project]",
 		Short: "Print all secrets as KEY=VALUE",
@@ -17,7 +18,7 @@ func NewExportCmd(flagProject *string, flagStore *string) *cobra.Command {
 			if len(args) > 0 {
 				projectArg = args[0]
 			}
-			project, backend, err := resolveContext(flagProject, flagStore, projectArg)
+			project, backend, err := resolveContext(flagProject, projectArg)
 			if err != nil {
 				return err
 			}
@@ -31,7 +32,12 @@ func NewExportCmd(flagProject *string, flagStore *string) *cobra.Command {
 			}
 			sort.Strings(keys)
 			for _, k := range keys {
-				fmt.Printf("%s=%s\n", k, secrets[k])
+				// Quote values containing newlines to prevent injection
+				v := secrets[k]
+				if strings.ContainsAny(v, "\n\r") {
+					v = "\"" + strings.ReplaceAll(strings.ReplaceAll(v, "\\", "\\\\"), "\"", "\\\"") + "\""
+				}
+				fmt.Printf("%s=%s\n", k, v)
 			}
 			return nil
 		},

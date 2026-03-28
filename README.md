@@ -4,14 +4,14 @@ Secure environment variable runner. Keep secrets out of your project directories
 
 ## Problem
 
-AI coding tools (Claude Code, Cursor, etc.) mount your project directory into sandboxed containers. Any `.env` file in your project is readable by the AI. **secrun** stores secrets outside your project — in encrypted vaults or macOS Keychain — and injects them at runtime.
+AI coding tools (Claude Code, Cursor, etc.) mount your project directory into sandboxed containers. Any `.env` file in your project is readable by the AI. **secrun** stores secrets outside your project in encrypted vaults and injects them at runtime.
 
 ## Install
 
 **Homebrew:**
 
 ```sh
-brew install secrun/tap/secrun
+brew install MartSurv/tap/secrun
 ```
 
 **Shell script:**
@@ -63,25 +63,15 @@ Secrets are never written to your project directory. They only exist in encrypte
 
 The `[project]` argument is optional — secrun infers it from the current directory name.
 
-## Backends
+## Storage
 
-**File (default):** AES-256-GCM encrypted vaults at `~/.config/secrun/vaults/`. Works on macOS and Linux.
+Secrets are stored in AES-256-GCM encrypted vault files at `~/.config/secrun/vaults/`. Works on macOS and Linux.
 
-**macOS Keychain:** Native keychain integration. No master password needed.
-
-Configure per-project in `~/.config/secrun/config.toml`:
-
-```toml
-[defaults]
-store = "file"
-
-[projects.my-app]
-store = "keychain"
-```
+On macOS, `secrun init` offers to save the master password to Keychain — so subsequent commands never prompt for it.
 
 ## Session Caching
 
-On first `secrun run`, you enter your master password (file backend). A background daemon caches decrypted secrets in memory for 4 hours (configurable with `--ttl`). Subsequent runs don't prompt.
+On first `secrun run`, you enter your master password (or it's loaded from Keychain on macOS). A background daemon caches decrypted secrets in memory for 4 hours (configurable with `--ttl`). Subsequent runs don't prompt.
 
 The daemon uses an authenticated protocol — other processes (including sandboxed AI tools) cannot retrieve cached secrets.
 
@@ -94,7 +84,7 @@ The daemon uses an authenticated protocol — other processes (including sandbox
 - Daemon prevents memory from being swapped to disk (mlockall)
 - Core dumps disabled in daemon process
 - Daemon auth token passed via stdin (not visible in `ps` or `/proc`)
-- Keychain backend pipes passwords via stdin (not visible in ps)
+- Master password optionally saved to macOS Keychain (never stored as plaintext on disk)
 - Secrets never appear in process arguments or shell history (use `secrun set KEY` without value)
 
 ## License

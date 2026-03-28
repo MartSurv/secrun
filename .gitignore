@@ -1,4 +1,4 @@
-# Binary (only at repo root, not cmd/secrun/)
+# Binary
 /secrun
 
 # Go

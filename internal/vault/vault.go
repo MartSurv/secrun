@@ -1,7 +1,6 @@
-// internal/vault/vault.go
 package vault
 
-// Backend is the interface for secret storage backends.
+// Backend is the interface for secret storage.
 type Backend interface {
 	Init(project string) error
 	Exists(project string) bool
@@ -12,5 +11,4 @@ type Backend interface {
 	Delete(project, key string) error
 	Projects() ([]string, error)
 	Count(project string) (int, error)
-	BackendName() string
 }

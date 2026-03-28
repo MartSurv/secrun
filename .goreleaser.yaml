@@ -7,7 +7,7 @@ before:
 
 builds:
   - id: secrun
-    main: ./cmd/secrun
+    main: .
     binary: secrun
     env:
       - CGO_ENABLED=0

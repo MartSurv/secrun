@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewInitCmd(flagProject *string, flagStore *string) *cobra.Command {
+func NewInitCmd(flagProject *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "init [project]",
 		Short: "Create a new project vault",
@@ -21,21 +21,22 @@ func NewInitCmd(flagProject *string, flagStore *string) *cobra.Command {
 			if len(args) > 0 {
 				projectArg = args[0]
 			}
-			dir, _ := os.Getwd()
-			project, err := resolve.ProjectName(coalesce(*flagProject, projectArg), dir)
+			project, err := resolveProjectName(flagProject, projectArg)
 			if err != nil {
 				return err
 			}
-			cfg, _ := config.Load(config.ConfigPath())
-			store := cfg.StoreForProject(project, *flagStore)
-			backend := getBackendWithConfirm(store)
+
+			backend := fileBackendWithConfirm()
 			if backend.Exists(project) {
 				return fmt.Errorf("project '%s' already exists", project)
 			}
 			if err := backend.Init(project); err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "Initialized project '%s' (backend: %s)\n", project, store)
+
+			offerKeychainSave(project)
+
+			fmt.Fprintf(os.Stderr, "Initialized project '%s'\n", project)
 			return nil
 		},
 	}
@@ -76,6 +77,16 @@ func fileBackendWithConfirm() vault.Backend {
 	return fb
 }
 
+// fileBackendForProject returns a file backend that tries Keychain first (on macOS).
+func fileBackendForProject(project string) vault.Backend {
+	kcFn := keychainPasswordFn(project)
+	if kcFn != nil {
+		fb := vault.NewFileBackend(config.VaultDir(), kcFn)
+		return fb
+	}
+	return fileBackend()
+}
+
 func coalesce(values ...string) string {
 	for _, v := range values {
 		if v != "" {
@@ -85,15 +96,17 @@ func coalesce(values ...string) string {
 	return ""
 }
 
-// resolveContext resolves the project name and backend from flags and args.
-// projectArg is an optional positional argument; flagProject/flagStore are global flags.
-func resolveContext(flagProject, flagStore *string, projectArg string) (string, vault.Backend, error) {
+// resolveProjectName resolves the project name from flag and positional arg.
+func resolveProjectName(flagProject *string, projectArg string) (string, error) {
 	dir, _ := os.Getwd()
-	project, err := resolve.ProjectName(coalesce(*flagProject, projectArg), dir)
+	return resolve.ProjectName(coalesce(*flagProject, projectArg), dir)
+}
+
+// resolveContext resolves the project name and returns a Keychain-aware backend.
+func resolveContext(flagProject *string, projectArg string) (string, vault.Backend, error) {
+	project, err := resolveProjectName(flagProject, projectArg)
 	if err != nil {
 		return "", nil, err
 	}
-	cfg, _ := config.Load(config.ConfigPath())
-	store := cfg.StoreForProject(project, *flagStore)
-	return project, getBackend(store), nil
+	return project, fileBackendForProject(project), nil
 }

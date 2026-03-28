@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewDeleteCmd(flagProject *string, flagStore *string) *cobra.Command {
+func NewDeleteCmd(flagProject *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [project] <KEY>",
 		Short: "Remove a secret",
@@ -24,7 +24,7 @@ func NewDeleteCmd(flagProject *string, flagStore *string) *cobra.Command {
 			if err := validate.KeyName(key); err != nil {
 				return err
 			}
-			project, backend, err := resolveContext(flagProject, flagStore, projectArg)
+			project, backend, err := resolveContext(flagProject, projectArg)
 			if err != nil {
 				return err
 			}

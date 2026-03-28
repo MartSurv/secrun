@@ -50,8 +50,6 @@ func (f *FileBackend) SetClearCacheFn(fn func()) {
 	f.clearCacheFn = fn
 }
 
-func (f *FileBackend) BackendName() string { return "file" }
-
 func (f *FileBackend) vaultPath(project string) string {
 	return filepath.Join(f.vaultDir, project+".enc")
 }

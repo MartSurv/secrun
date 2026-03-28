@@ -7,14 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/MartSurv/secrun/internal/config"
 	"github.com/MartSurv/secrun/internal/prompt"
-	"github.com/MartSurv/secrun/internal/resolve"
+	"github.com/MartSurv/secrun/internal/validate"
 	"github.com/MartSurv/secrun/internal/vault"
 	"github.com/spf13/cobra"
 )
 
-func NewImportCmd(flagProject *string, flagStore *string) *cobra.Command {
+func NewImportCmd(flagProject *string) *cobra.Command {
 	var fromFile string
 	cmd := &cobra.Command{
 		Use:   "import [project]",
@@ -22,29 +21,27 @@ func NewImportCmd(flagProject *string, flagStore *string) *cobra.Command {
 		Long:  "Import from a .env file (--from) or prompt for each key in .env.example / .env.local.example",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dir, _ := os.Getwd()
-			cfg, _ := config.Load(config.ConfigPath())
 			projectArg := ""
 			if len(args) > 0 {
 				projectArg = args[0]
 			}
-			project, err := resolve.ProjectName(coalesce(*flagProject, projectArg), dir)
+			project, err := resolveProjectName(flagProject, projectArg)
 			if err != nil {
 				return err
 			}
-			store := cfg.StoreForProject(project, *flagStore)
-			backend := getBackend(store)
+			backend := fileBackendForProject(project)
 			if !backend.Exists(project) {
 				fmt.Fprintf(os.Stderr, "Project '%s' doesn't exist. Initializing...\n", project)
-				initBackend := getBackendWithConfirm(store)
+				initBackend := fileBackendWithConfirm()
 				if err := initBackend.Init(project); err != nil {
 					return err
 				}
+				offerKeychainSave(project)
 			}
 			if fromFile != "" {
 				return importFromFile(backend, project, fromFile)
 			}
-			return importFromExample(backend, project, dir)
+			return importFromExample(backend, project)
 		},
 	}
 	cmd.Flags().StringVar(&fromFile, "from", "", "Path to .env file to import")
@@ -58,6 +55,10 @@ func importFromFile(backend vault.Backend, project, path string) error {
 	}
 	count := 0
 	for k, v := range secrets {
+		if err := validate.KeyName(k); err != nil {
+			fmt.Fprintf(os.Stderr, "Skipping invalid key '%s': %v\n", k, err)
+			continue
+		}
 		if err := backend.Set(project, k, v); err != nil {
 			return fmt.Errorf("set %s: %w", k, err)
 		}
@@ -67,7 +68,8 @@ func importFromFile(backend vault.Backend, project, path string) error {
 	return nil
 }
 
-func importFromExample(backend vault.Backend, project, dir string) error {
+func importFromExample(backend vault.Backend, project string) error {
+	dir, _ := os.Getwd()
 	candidates := []string{".env.example", ".env.local.example"}
 	var examplePath string
 	for _, c := range candidates {
@@ -104,7 +106,6 @@ func importFromExample(backend vault.Backend, project, dir string) error {
 	return nil
 }
 
-// scanEnvLines reads an env file and calls fn for each key=value line.
 func scanEnvLines(path string, fn func(key, value string)) error {
 	f, err := os.Open(path)
 	if err != nil {

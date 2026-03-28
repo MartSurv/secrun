@@ -14,7 +14,6 @@ import (
 
 var (
 	flagProject string
-	flagStore   string
 	flagTTL     string
 	flagNoCache bool
 )
@@ -27,19 +26,18 @@ func main() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&flagProject, "project", "", "Explicit project name (overrides directory inference)")
-	rootCmd.PersistentFlags().StringVar(&flagStore, "store", "", "Secret backend: file or keychain (default: file)")
 	rootCmd.PersistentFlags().StringVar(&flagTTL, "ttl", "4h", "Session cache duration")
 	rootCmd.PersistentFlags().BoolVar(&flagNoCache, "no-cache", false, "Skip session daemon, prompt every time")
 
-	rootCmd.AddCommand(commands.NewInitCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewSetCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewGetCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewListCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewDeleteCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewImportCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewExportCmd(&flagProject, &flagStore))
-	rootCmd.AddCommand(commands.NewProjectsCmd(&flagStore))
-	rootCmd.AddCommand(commands.NewRunCmd(&flagProject, &flagStore, &flagTTL, &flagNoCache))
+	rootCmd.AddCommand(commands.NewInitCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewSetCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewGetCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewListCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewDeleteCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewImportCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewExportCmd(&flagProject))
+	rootCmd.AddCommand(commands.NewProjectsCmd())
+	rootCmd.AddCommand(commands.NewRunCmd(&flagProject, &flagTTL, &flagNoCache))
 	rootCmd.AddCommand(newDaemonCmd())
 
 	if err := rootCmd.Execute(); err != nil {
@@ -58,7 +56,6 @@ func newDaemonCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// Read auth token from stdin (not CLI args, to avoid /proc/PID/cmdline exposure)
 			tokenBytes, err := io.ReadAll(os.Stdin)
 			if err != nil || len(tokenBytes) == 0 {
 				return fmt.Errorf("auth token required (via stdin)")
