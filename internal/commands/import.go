@@ -38,10 +38,16 @@ func NewImportCmd(flagProject *string) *cobra.Command {
 				}
 				offerKeychainSave(project)
 			}
+			var importErr error
 			if fromFile != "" {
-				return importFromFile(backend, project, fromFile)
+				importErr = importFromFile(backend, project, fromFile)
+			} else {
+				importErr = importFromExample(backend, project)
 			}
-			return importFromExample(backend, project)
+			if importErr == nil {
+				clearDaemonCache(project)
+			}
+			return importErr
 		},
 	}
 	cmd.Flags().StringVar(&fromFile, "from", "", "Path to .env file to import")

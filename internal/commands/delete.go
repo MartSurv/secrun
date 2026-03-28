@@ -31,6 +31,7 @@ func NewDeleteCmd(flagProject *string) *cobra.Command {
 			if err := backend.Delete(project, key); err != nil {
 				return err
 			}
+			clearDaemonCache(project)
 			fmt.Fprintf(os.Stderr, "Deleted %s from project '%s'\n", key, project)
 			return nil
 		},

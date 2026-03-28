@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/MartSurv/secrun/internal/config"
+	"github.com/MartSurv/secrun/internal/daemon"
 	"github.com/MartSurv/secrun/internal/prompt"
 	"github.com/MartSurv/secrun/internal/resolve"
 	"github.com/MartSurv/secrun/internal/vault"
@@ -94,6 +95,17 @@ func coalesce(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// clearDaemonCache evicts a project's cached secrets from the daemon.
+// Best-effort — silently ignores errors (daemon may not be running).
+func clearDaemonCache(project string) {
+	tokenBytes, err := os.ReadFile(daemon.TokenPath())
+	if err != nil {
+		return
+	}
+	client := daemon.NewClient(daemon.SocketPath(), string(tokenBytes))
+	client.Clear(project)
 }
 
 // resolveProjectName resolves the project name from flag and positional arg.

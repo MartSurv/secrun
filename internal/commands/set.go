@@ -67,6 +67,9 @@ func NewSetCmd(flagProject *string) *cobra.Command {
 			if err := backend.Set(project, key, value); err != nil {
 				return err
 			}
+			// Clear daemon cache so next `run` picks up the change
+			clearDaemonCache(project)
+
 			fmt.Fprintf(os.Stderr, "Set %s in project '%s'\n", key, project)
 			return nil
 		},
