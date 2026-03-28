@@ -4,7 +4,7 @@ Secure environment variable runner. Keep secrets out of your project directories
 
 ## Problem
 
-AI coding tools (Claude Code, Cursor, etc.) mount your project directory into sandboxed containers. Any `.env` file in your project is readable by the AI. **secrun** stores secrets outside your project in encrypted vaults and injects them at runtime.
+AI coding tools (Claude Code, Cursor, Copilot, etc.) can read files in your project directory — including `.env` files containing API keys, database credentials, and other secrets. **secrun** stores secrets outside your project in encrypted vaults and injects them as environment variables at runtime.
 
 ## Install
 
