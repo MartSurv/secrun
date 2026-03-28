@@ -1,0 +1,46 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: secrun
+    main: ./cmd/secrun
+    binary: secrun
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: secrun
+    format: tar.gz
+    name_template: "secrun_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+brews:
+  - name: secrun
+    repository:
+      owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+      name: homebrew-tap
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/secrun"
+    description: "Secure environment variable runner — keep secrets out of project directories"
+    license: "MIT"
+    install: |
+      bin.install "secrun"
