@@ -39,6 +39,7 @@ brews:
     repository:
       owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/secrun"
     description: "Secure environment variable runner — keep secrets out of project directories"
     license: "MIT"
