@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"bufio"
+	"crypto/subtle"
 	"fmt"
 	"net"
 	"os"
@@ -79,7 +80,7 @@ func (s *Server) handleConn(conn net.Conn) {
 	req, err := DecodeRequest(scanner.Bytes())
 	if err != nil { s.writeResponse(conn, Response{OK: false, Error: "invalid request"}); return }
 
-	if req.Token != s.authToken {
+	if subtle.ConstantTimeCompare([]byte(req.Token), []byte(s.authToken)) != 1 {
 		s.writeResponse(conn, Response{OK: false, Error: "unauthorized"})
 		return
 	}

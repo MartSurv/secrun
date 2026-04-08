@@ -325,13 +325,17 @@ func (f *FileBackend) writeVault(project string, secrets map[string]string) erro
 		return fmt.Errorf("close temp file: %w", closeErr)
 	}
 
+	// Chmod before rename so the file has correct permissions the moment it
+	// appears at the final path — eliminates the brief window where another
+	// process could read the file with default permissions.
+	if err := os.Chmod(tmpPath, 0600); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("chmod vault: %w", err)
+	}
+
 	if err := os.Rename(tmpPath, vaultPath); err != nil {
 		os.Remove(tmpPath)
 		return fmt.Errorf("rename vault: %w", err)
-	}
-
-	if err := os.Chmod(vaultPath, 0600); err != nil {
-		return fmt.Errorf("chmod vault: %w", err)
 	}
 
 	return nil
