@@ -1,19 +1,13 @@
 package config
 
-import "os"
-
-type Config struct {
-	TTL string
-}
-
-func Load(path string) *Config {
-	return &Config{TTL: "4h"}
-}
+import (
+	"os"
+	"path/filepath"
+)
 
 func ConfigDir() string {
 	home, _ := os.UserHomeDir()
-	return home + "/.config/secrun"
+	return filepath.Join(home, ".config", "secrun")
 }
 
-func ConfigPath() string { return ConfigDir() + "/config.toml" }
-func VaultDir() string   { return ConfigDir() + "/vaults" }
+func VaultDir() string { return filepath.Join(ConfigDir(), "vaults") }

@@ -84,8 +84,10 @@ func NewRunCmd(flagProject *string, flagTTL *string, flagNoCache *bool) *cobra.C
 	return cmd
 }
 
+const authTokenLen = 32 // 256-bit auth token
+
 func startDaemon(ttl time.Duration) (string, error) {
-	tokenBytes := make([]byte, 32)
+	tokenBytes := make([]byte, authTokenLen)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		return "", fmt.Errorf("generate token: %w", err)
 	}
