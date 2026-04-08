@@ -1,7 +1,6 @@
 package prompt
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strings"
@@ -31,11 +30,11 @@ func PasswordConfirm(label string) (string, error) {
 	return pw1, nil
 }
 
-// Value prompts the user for a value, showing it as they type.
+// Value prompts the user for a secret value without echoing input.
 func Value(label string) (string, error) {
 	fmt.Fprintf(os.Stderr, "%s: ", label)
-	reader := bufio.NewReader(os.Stdin)
-	val, err := reader.ReadString('\n')
+	val, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Fprintln(os.Stderr)
 	if err != nil { return "", fmt.Errorf("read value: %w", err) }
-	return strings.TrimSpace(val), nil
+	return strings.TrimSpace(string(val)), nil
 }
